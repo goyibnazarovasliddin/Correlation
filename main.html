@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Convolution and Correlation in JavaScript</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      body {
+        display: flex;
+        align-items: center;
+        flex-direction: column;
+      }
+      .correlation-coefficients {
+        border: 2px solid red;
+        padding: 10px 20px;
+        font-family: 'Courier New', Courier, monospace;
+        margin: 20px;
+        font-size: 28px;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="convolutionChart"></canvas>
+
+    <!-- Korrelatsiya koeffitsiyentlari uchun blok -->
+    <div class="correlation-coefficients">
+      <p>Correlation coefficient (f and Convolution): <span id="corrF"></span></p>
+      <p>Correlation coefficient (g and Convolution): <span id="corrG"></span></p>
+    </div>
+
+    <script>
+      // Funksiyalarni yozib olish
+      function f(x) {
+        return 3 * Math.pow(x, 4) - 16 * Math.pow(x, 3) + 2;
+      }
+
+      function g(x) {
+        return Math.pow(x, 3) / (Math.pow(x, 2) + 1);
+      }
+
+      // Diskret svyordka funksiyasini yozish
+      function convolution(f, g, xValues, dx) {
+        let conv = [];
+        let n = xValues.length;
+        for (let i = 0; i < n; i++) {
+          let sum = 0;
+          for (let j = 0; j < n; j++) {
+            let xi = xValues[j];
+            let x_shift = i - j;
+            if (x_shift >= 0 && x_shift < n) {
+              sum += f(xi) * g(xValues[x_shift]) * dx;
+            }
+          }
+          conv.push(sum);
+        }
+        return conv;
+      }
+
+      // Korrelatsiya koeffitsiyentini hisoblash funksiyasi
+      function correlationCoefficient(fValues, gValues) {
+        let n = fValues.length;
+        let sumX = 0, sumY = 0, sumXY = 0;
+        let sumX2 = 0, sumY2 = 0;
+
+        for (let i = 0; i < n; i++) {
+          let x = fValues[i];
+          let y = gValues[i];
+          sumX += x;
+          sumY += y;
+          sumXY += x * y;
+          sumX2 += x * x;
+          sumY2 += y * y;
+        }
+
+        let numerator = n * sumXY - sumX * sumY;
+        let denominator = Math.sqrt((n * sumX2 - sumX ** 2) * (n * sumY2 - sumY ** 2));
+
+        return denominator === 0 ? 0 : numerator / denominator;
+      }
+
+      // x qiymatlarni hosil qilish
+      let xValues = [];
+      let dx = 0.01;
+      for (let x = -3; x <= 1; x += dx) {
+        xValues.push(x);
+      }
+
+      // Svyordkalash va qiymatlarni hosil qilish
+      let convResult = convolution(f, g, xValues, dx);
+      let fResult = xValues.map(f);
+      let gResult = xValues.map(g);
+
+      // Korrelatsiya koeffitsiyentlarini hisoblash
+      let corrResult_f = correlationCoefficient(fResult, convResult);
+      let corrResult_g = correlationCoefficient(gResult, convResult);
+
+      // Korrelatsiya koeffitsiyentlarini sahifada chiqarish
+      document.getElementById("corrF").innerText = corrResult_f.toFixed(5);
+      document.getElementById("corrG").innerText = corrResult_g.toFixed(5);
+
+      // Svyordka natijasini chiqarish (Chart.js bilan)
+      const ctx1 = document.getElementById("convolutionChart").getContext("2d");
+      const convolutionChart = new Chart(ctx1, {
+        type: "line",
+        data: {
+          labels: xValues,
+          datasets: [
+            {
+              label: "f(x) dastlabki funksiya",
+              data: fResult,
+              borderColor: "blue",
+              fill: false,
+            },
+            {
+              label: "g(x) dastlabki funksiya",
+              data: gResult,
+              borderColor: "green",
+              fill: false,
+            },
+            {
+              label: "f(x) * g(x) funksiyalar svyordkasi (Convolution)",
+              data: convResult,
+              borderColor: "red",
+              fill: false,
+            },
+          ],
+        },
+        options: {
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: "x qiymatlar",
+              },
+            },
+            y: {
+              title: {
+                display: true,
+                text: "y qiymatlar",
+              },
+            },
+          },
+        },
+      });
+    </script>
+  </body>
+</html>
